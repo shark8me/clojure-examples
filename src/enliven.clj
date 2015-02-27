@@ -1,7 +1,7 @@
 (ns enliven
   (:require [net.cgrand.enlive-html :as html]
             [hiccup.core :as hc]
-            [ppxml :as ppx]
+;            [ppxml :as ppx]
             [clojure.java.io :as io]))
 
 
