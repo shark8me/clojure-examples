@@ -18,7 +18,7 @@
 (ns enliven
   (:require [net.cgrand.enlive-html :as html]
             [hiccup.core :as hc]
-            [html-indent :refer [view]]
+            [html-indent.core :refer [view]]
             [clojure.java.io :as io]))
 (view (hc/html [:div]))
 ;; @@
