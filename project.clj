@@ -6,8 +6,7 @@
                  [enlive "1.1.5"]
                  [org.clojure/core.match "0.3.0-alpha4"]
                  [zip-visit "1.0.2"]
-;                 [gorilla-repl "0.3.5"]
-                 [gorilla-indented-html-renderer "0.1.0-SNAPSHOT"]
+                 [gorilla-indented-html-renderer "0.1.0"]
                  [hiccup "1.0.5"]]
  :plugins [[lein-gorilla "0.3.4"]]
  :target-path "target/%s"
