@@ -1,0 +1,419 @@
+;; gorilla-repl.fileformat = 1
+
+;; **
+;;; # Enlive tutorial
+;;; 
+;;; This is a tutorial for *[Enlive](https://github.com/cgrand/enlive "Enlive"), an HTML templating library* written in [Clojure](http://www.clojure.org "Clojure").
+;;; 
+;;; Using Enlive, we can have a pure HTML template created by a UI designer, and
+;;; have a Clojure developer add the dynamic content without having to mix code and html, like
+;;; other template systems (e.g. JSP, Velocity etc).
+;;; 
+;;; Since Enlive works by modifying HTML content, we use the _Hiccup_ library to generate some HTML templates.
+;;; We'll create some html snippets to start with:
+;;; 
+;; **
+
+;; @@
+(ns enliven
+  (:require [net.cgrand.enlive-html :as html]
+            [hiccup.core :as hc]
+            [html-indent :refer [view]]
+            [clojure.java.io :as io]))
+(view (hc/html [:div]))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div&gt;&lt;/div&gt;</span>","value":"\"<div></div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; The *view* function is a helper function that extends the gorilla-repl functionality to print indented HTML output. 
+;;; We next create a div tag that contains an h1 tag.
+;; **
+
+;; @@
+(view (hc/html [:div [:h1]]))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div&gt;</span>","value":"\"<div>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;&lt;/h1&gt;</span>","value":"\" <h1></h1>\""},{"type":"html","content":"<span class='unk'>&lt;/div&gt;</span>","value":"\"</div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div><h1></h1></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; Let's add some text to the H1 tag:
+;; **
+
+;; @@
+(view (hc/html [:div [:h1 "head"]]))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div&gt;</span>","value":"\"<div>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;head&lt;/h1&gt;</span>","value":"\" <h1>head</h1>\""},{"type":"html","content":"<span class='unk'>&lt;/div&gt;</span>","value":"\"</div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div><h1>head</h1></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; And add an attribute to the h1 tag as well:
+;; **
+
+;; @@
+(view (hc/html [:div [:h1 {:class "url"} "Heading" ]]))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div&gt;</span>","value":"\"<div>\""},{"type":"html","content":"<span class='unk'> &lt;h1 class=&#x27;url&#x27;&gt;Heading&lt;/h1&gt;</span>","value":"\" <h1 class='url'>Heading</h1>\""},{"type":"html","content":"<span class='unk'>&lt;/div&gt;</span>","value":"\"</div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div><h1 class=\\\"url\\\">Heading</h1></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; We'll use Enlive's *sniptest* macro for quick experimentation. The *sniptest* macro takes 2 arguments, an html snippet, followed by forms which manipulate the html snippet.
+;;; 
+;;; Let's first create an html snippet that will be modified:
+;; **
+
+;; @@
+(def snip1 (hc/html [:div]))
+(view snip1)
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div&gt;&lt;/div&gt;</span>","value":"\"<div></div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; ## Adding element attributes
+;;; 
+;;; We'll start our exploration of Enlive's capabilities by adding an _attribute_ or _content_ to an HTML snippet. 
+;;; 
+;;; Let's add a class attribute to the snippet, by using the *add-class* method.
+;; **
+
+;; @@
+(view (html/sniptest snip1 (html/add-class "abc")))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div class=&#x27;abc&#x27;&gt;&lt;/div&gt;</span>","value":"\"<div class='abc'></div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div class=\\\"abc\\\"></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; We can add text to the div tag by using the *content* method.
+;; **
+
+;; @@
+(view (html/sniptest snip1 (html/content "dev")))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div&gt;dev&lt;/div&gt;</span>","value":"\"<div>dev</div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div>dev</div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; Let's create a larger snippet with deeper structure. This is a link tag inside a div tag.
+;; **
+
+;; @@
+(def snip2 (hc/html [:div {:class "url"}
+          [:a {:href "http://clojure.org"} "Clojure - home"]] ))
+(view snip2)
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div class=&#x27;url&#x27;&gt;</span>","value":"\"<div class='url'>\""},{"type":"html","content":"<span class='unk'> &lt;a href=&#x27;http://clojure.org&#x27;&gt;Clojure - home&lt;/a&gt;</span>","value":"\" <a href='http://clojure.org'>Clojure - home</a>\""},{"type":"html","content":"<span class='unk'>&lt;/div&gt;</span>","value":"\"</div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div class=\\\"url\\\"><a href=\\\"http://clojure.org\\\">Clojure - home</a></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; ## Choosing elements to match
+;;; 
+;;; When we have multiple HTML elements and we wish to change the content at a specific section, we can use a _selector_ (similar to CSS Selectors) to choose the tag at which content should be changed.
+;;; 
+;;; ### Changing the url in a link
+;;; 
+;;; We wish to change the href url from clojure.org to the Clojure page on wikipedia.org.
+;;; In the code below, the second argument is a selector that chooses the target node for the transformation. 
+;; **
+
+;; @@
+(view (html/sniptest snip2 [:div :a] (html/set-attr :href "http://en.wikipedia.org/wiki/Clojure")))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;div class=&#x27;url&#x27;&gt;</span>","value":"\"<div class='url'>\""},{"type":"html","content":"<span class='unk'> &lt;a href=&#x27;http://en.wikipedia.org/wiki/Clojure&#x27;&gt;Clojure - home&lt;/a&gt;</span>","value":"\" <a href='http://en.wikipedia.org/wiki/Clojure'>Clojure - home</a>\""},{"type":"html","content":"<span class='unk'>&lt;/div&gt;</span>","value":"\"</div>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<div class=\\\"url\\\"><a href=\\\"http://en.wikipedia.org/wiki/Clojure\\\">Clojure - home</a></div>\", :opts nil}"}
+;; <=
+
+;; **
+;;; ### Changing content of lists
+;;; 
+;;; Let's create a snippet that has a list of items.
+;; **
+
+;; @@
+(def snip3 (hc/html [:body [:h1 "heading"]
+          [:ul
+           [:li "one"]
+           [:li "two"]]]))
+(view snip3)
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;one&lt;/li&gt;</span>","value":"\"  <li>one</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;two&lt;/li&gt;</span>","value":"\"  <li>two</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>one</li><li>two</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; Let's change the content of all the li tags.
+;; **
+
+;; @@
+(view (html/sniptest snip3
+               [:body :ul :li]
+               (html/content "abcd")))
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>abcd</li><li>abcd</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; There's no need to give the path from root till the leaf node, omit the parent tags (body,ul) tag and it still works.
+;; **
+
+;; @@
+(view (html/sniptest snip3
+               [:ul :li]
+               (html/content "abcd")))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>abcd</li><li>abcd</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; @@
+(view (html/sniptest snip3
+               [:li]
+               (html/content "abcd")))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>abcd</li><li>abcd</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; Note that we changed the content of all the _li_ tags.
+;;; Lets try to change (the content of) a specific tag, the first tag using the _first-child_ method
+;; **
+
+;; @@
+(view (html/sniptest snip3
+               [[:li html/first-child]] (html/content "first item")))
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;first item&lt;/li&gt;</span>","value":"\"  <li>first item</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;two&lt;/li&gt;</span>","value":"\"  <li>two</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>first item</li><li>two</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; We can instead match the first child of a given type, and specify the type as a listindex.
+;; **
+
+;; @@
+(view (html/sniptest snip3
+               [[html/first-of-type :li]] (html/content "abcd")))
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;abcd&lt;/li&gt;</span>","value":"\"  <li>abcd</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;two&lt;/li&gt;</span>","value":"\"  <li>two</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>abcd</li><li>two</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; ## Replacing a list in a template with our own data.
+;;; 
+;;; Lets try to replace the list with one of our own.
+;;; Define the data, a list of movies directed by [Vishal Bharadwaj](http://en.wikipedia.org/wiki/Vishal_Bhardwaj "Vishal Bharadwaj")
+;; **
+
+;; @@
+(def data ["Omkara","Blue Umbrella","Kaminey","Haider"])
+data
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-vector'>[</span>","close":"<span class='clj-vector'>]</span>","separator":" ","items":[{"type":"html","content":"<span class='clj-string'>&quot;Omkara&quot;</span>","value":"\"Omkara\""},{"type":"html","content":"<span class='clj-string'>&quot;Blue Umbrella&quot;</span>","value":"\"Blue Umbrella\""},{"type":"html","content":"<span class='clj-string'>&quot;Kaminey&quot;</span>","value":"\"Kaminey\""},{"type":"html","content":"<span class='clj-string'>&quot;Haider&quot;</span>","value":"\"Haider\""}],"value":"[\"Omkara\" \"Blue Umbrella\" \"Kaminey\" \"Haider\"]"}
+;; <=
+
+;; **
+;;; We replace the snippet containing a unnumbered list with the data.
+;; **
+
+;; @@
+(view (html/sniptest snip3
+               ;match the first list index
+               [[html/first-of-type :li]]
+               ;clone the first list index, and for each element in data, add a new list index
+               (html/clone-for [item data]
+                               [:li] (html/content item))))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1&gt;heading&lt;/h1&gt;</span>","value":"\" <h1>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul&gt;</span>","value":"\" <ul>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;Omkara&lt;/li&gt;</span>","value":"\"  <li>Omkara</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;Blue Umbrella&lt;/li&gt;</span>","value":"\"  <li>Blue Umbrella</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;Kaminey&lt;/li&gt;</span>","value":"\"  <li>Kaminey</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;Haider&lt;/li&gt;</span>","value":"\"  <li>Haider</li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;two&lt;/li&gt;</span>","value":"\"  <li>two</li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1>heading</h1><ul><li>Omkara</li><li>Blue Umbrella</li><li>Kaminey</li><li>Haider</li><li>two</li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; It is almost the output we need, except that the last element of the list was unnecessary.
+;;; We can keep only one listitem in the template and achieve the same result.
+;;; 
+;;; ## Replacing nested trees 
+;;; 
+;;; In this section, our data is tree structured. It consists of a title, followed by a list item.
+;;; Each item in the list has a text and href link associated with it.
+;;; 
+;; **
+
+;; @@
+(def data2 [{:title "Designation", :data [{:text "New Hire ", :href "www.orgname.org/newhire"}
+                               {:text "Manager ", :href "www.orgname.org/manager"} ]}
+           {:title "Group", :data [{:text "IT ", :href "www.orgname.org/IT"}
+                             {:text "Customer Advocacy ", :href "www.orgname.org/advocacy"}]}])
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;enliven/data2</span>","value":"#'enliven/data2"}
+;; <=
+
+;; **
+;;; We'll first define an html snippet that serves as a template into which we can fill our data.
+;;; 
+;;; It consists of a list of h1 titles, followed by a unnumbered list. Each listitem is a link
+;; **
+
+;; @@
+(def snip3 (hc/html [:body [:h1 {:class "title"} "heading"]
+          [:ul {:id "grouplevel"} [:li [:a {:href "cnn.com"} "content"]]]]))
+(view snip3)
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1 class=&#x27;title&#x27;&gt;heading&lt;/h1&gt;</span>","value":"\" <h1 class='title'>heading</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul id=&#x27;grouplevel&#x27;&gt;</span>","value":"\" <ul id='grouplevel'>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;cnn.com&#x27;&gt;content&lt;/a&gt;</span>","value":"\"   <a href='cnn.com'>content</a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1 class=\\\"title\\\">heading</h1><ul id=\\\"grouplevel\\\"><li><a href=\\\"cnn.com\\\">content</a></li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; There are 2 tasks to be accomplished:
+;;; 
+;;; 1. set the title in the **h1** tag
+;;; 2. create a list of **li** (listitems)
+;;; 
+;;; The code in the following section achieves the same by
+;;; 
+;;; * inserting the *title* at the *ul* tag
+;;; * Looping using the *clone-for* construct, which creates a *li* for every child item under the heading.
+;; **
+
+;; @@
+(view (html/sniptest snip3
+  ;select the tags from the <h1> tag till the <ul class="grouplevel"> tag
+  {[:h1][[html/first-of-type :ul#grouplevel]]}
+  
+  ;for each list item in data2,
+  (html/clone-for [{:keys [title data]} data2]
+                               ;set the content for the <h1> tag
+                               [:h1] (html/content title)
+                               ;for the <li> items
+                               [:ul#grouplevel [:li html/first-of-type]]
+                               ;for all the items in the :data section, create a <li><a> tag
+                               (html/clone-for [{:keys [text href]} data]
+                                                [:li :a] (html/set-attr :href href)
+                                                [:li :a] (html/content text)
+                                                ))))
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1 class=&#x27;title&#x27;&gt;Designation&lt;/h1&gt;</span>","value":"\" <h1 class='title'>Designation</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul id=&#x27;grouplevel&#x27;&gt;</span>","value":"\" <ul id='grouplevel'>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/newhire&#x27;&gt;New Hire &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/newhire'>New Hire </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/manager&#x27;&gt;Manager &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/manager'>Manager </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'> &lt;h1 class=&#x27;title&#x27;&gt;Group&lt;/h1&gt;</span>","value":"\" <h1 class='title'>Group</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul id=&#x27;grouplevel&#x27;&gt;</span>","value":"\" <ul id='grouplevel'>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/IT&#x27;&gt;IT &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/IT'>IT </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/advocacy&#x27;&gt;Customer Advocacy &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/advocacy'>Customer Advocacy </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1 class=\\\"title\\\">Designation</h1><ul id=\\\"grouplevel\\\"><li><a href=\\\"www.orgname.org/newhire\\\">New Hire </a></li><li><a href=\\\"www.orgname.org/manager\\\">Manager </a></li></ul><h1 class=\\\"title\\\">Group</h1><ul id=\\\"grouplevel\\\"><li><a href=\\\"www.orgname.org/IT\\\">IT </a></li><li><a href=\\\"www.orgname.org/advocacy\\\">Customer Advocacy </a></li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; ## Using Enlive Snippets and Templates
+;;; 
+;;; This approach works for smaller HTML segments. If we have to manipulate bigger HTML segments, Enlive uses the notion of templates and snippets. A template can consists of multiple snippets, each of which can modify a section of HTML.
+;;; 
+;;; We can also do this in 2 phases. We first define a snippet using **defsnippet** that will act on one item in our data.
+;; **
+
+;; @@
+ 
+(html/defsnippet h1snip
+  (html/html-snippet snip3)
+  ;select the <h1> to <ul id="grouplevel"> tags
+  {[:h1][[html/first-of-type :ul#grouplevel]]}
+                 
+  ;the single argument is destructured and title, data keys are separated
+  [{:keys [title data]}]
+                 
+  ;set the <h1> tag content
+  [[html/first-of-type :h1]] (html/content title)
+                 
+  ;select the <ul id="grouplevel"> tag that has a <li> child
+  [:ul#grouplevel [html/first-of-type :li ]]
+  
+  ;set the <li> tags for each items in data
+  (html/clone-for [{:keys [href text]} data]
+  	  	                      [:li :a] (html/set-attr :href href)
+                              [:li :a] (html/content text))
+
+     )
+
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;enliven/h1snip</span>","value":"#'enliven/h1snip"}
+;; <=
+
+;; **
+;;; We can run the snippet on any items in the *data2* var, and the output is the following datastructure, which is just the HTML in a Clojure map.
+;; **
+
+;; @@
+(h1snip (second data2))
+
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-lazy-seq'>(</span>","close":"<span class='clj-lazy-seq'>)</span>","separator":" ","items":[{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tag</span>","value":":tag"},{"type":"html","content":"<span class='clj-keyword'>:h1</span>","value":":h1"}],"value":"[:tag :h1]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:attrs</span>","value":":attrs"},{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:class</span>","value":":class"},{"type":"html","content":"<span class='clj-string'>&quot;title&quot;</span>","value":"\"title\""}],"value":"[:class \"title\"]"}],"value":"{:class \"title\"}"}],"value":"[:attrs {:class \"title\"}]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:content</span>","value":":content"},{"type":"list-like","open":"<span class='clj-vector'>[</span>","close":"<span class='clj-vector'>]</span>","separator":" ","items":[{"type":"html","content":"<span class='clj-string'>&quot;Group&quot;</span>","value":"\"Group\""}],"value":"[\"Group\"]"}],"value":"[:content [\"Group\"]]"}],"value":"{:tag :h1, :attrs {:class \"title\"}, :content [\"Group\"]}"},{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tag</span>","value":":tag"},{"type":"html","content":"<span class='clj-keyword'>:ul</span>","value":":ul"}],"value":"[:tag :ul]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:attrs</span>","value":":attrs"},{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:id</span>","value":":id"},{"type":"html","content":"<span class='clj-string'>&quot;grouplevel&quot;</span>","value":"\"grouplevel\""}],"value":"[:id \"grouplevel\"]"}],"value":"{:id \"grouplevel\"}"}],"value":"[:attrs {:id \"grouplevel\"}]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:content</span>","value":":content"},{"type":"list-like","open":"<span class='clj-vector'>[</span>","close":"<span class='clj-vector'>]</span>","separator":" ","items":[{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tag</span>","value":":tag"},{"type":"html","content":"<span class='clj-keyword'>:li</span>","value":":li"}],"value":"[:tag :li]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:attrs</span>","value":":attrs"},{"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}],"value":"[:attrs nil]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:content</span>","value":":content"},{"type":"list-like","open":"<span class='clj-vector'>[</span>","close":"<span class='clj-vector'>]</span>","separator":" ","items":[{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tag</span>","value":":tag"},{"type":"html","content":"<span class='clj-keyword'>:a</span>","value":":a"}],"value":"[:tag :a]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:attrs</span>","value":":attrs"},{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:href</span>","value":":href"},{"type":"html","content":"<span class='clj-string'>&quot;www.orgname.org/IT&quot;</span>","value":"\"www.orgname.org/IT\""}],"value":"[:href \"www.orgname.org/IT\"]"}],"value":"{:href \"www.orgname.org/IT\"}"}],"value":"[:attrs {:href \"www.orgname.org/IT\"}]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:content</span>","value":":content"},{"type":"list-like","open":"<span class='clj-lazy-seq'>(</span>","close":"<span class='clj-lazy-seq'>)</span>","separator":" ","items":[{"type":"html","content":"<span class='clj-string'>&quot;IT &quot;</span>","value":"\"IT \""}],"value":"(\"IT \")"}],"value":"[:content (\"IT \")]"}],"value":"{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}"}],"value":"[{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]"}],"value":"[:content [{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]]"}],"value":"{:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]}"},{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tag</span>","value":":tag"},{"type":"html","content":"<span class='clj-keyword'>:li</span>","value":":li"}],"value":"[:tag :li]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:attrs</span>","value":":attrs"},{"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}],"value":"[:attrs nil]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:content</span>","value":":content"},{"type":"list-like","open":"<span class='clj-vector'>[</span>","close":"<span class='clj-vector'>]</span>","separator":" ","items":[{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tag</span>","value":":tag"},{"type":"html","content":"<span class='clj-keyword'>:a</span>","value":":a"}],"value":"[:tag :a]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:attrs</span>","value":":attrs"},{"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:href</span>","value":":href"},{"type":"html","content":"<span class='clj-string'>&quot;www.orgname.org/advocacy&quot;</span>","value":"\"www.orgname.org/advocacy\""}],"value":"[:href \"www.orgname.org/advocacy\"]"}],"value":"{:href \"www.orgname.org/advocacy\"}"}],"value":"[:attrs {:href \"www.orgname.org/advocacy\"}]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:content</span>","value":":content"},{"type":"list-like","open":"<span class='clj-lazy-seq'>(</span>","close":"<span class='clj-lazy-seq'>)</span>","separator":" ","items":[{"type":"html","content":"<span class='clj-string'>&quot;Customer Advocacy &quot;</span>","value":"\"Customer Advocacy \""}],"value":"(\"Customer Advocacy \")"}],"value":"[:content (\"Customer Advocacy \")]"}],"value":"{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}"}],"value":"[{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]"}],"value":"[:content [{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]]"}],"value":"{:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]}"}],"value":"[{:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]} {:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]}]"}],"value":"[:content [{:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]} {:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]}]]"}],"value":"{:tag :ul, :attrs {:id \"grouplevel\"}, :content [{:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]} {:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]}]}"}],"value":"({:tag :h1, :attrs {:class \"title\"}, :content [\"Group\"]} {:tag :ul, :attrs {:id \"grouplevel\"}, :content [{:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/IT\"}, :content (\"IT \")}]} {:tag :li, :attrs nil, :content [{:tag :a, :attrs {:href \"www.orgname.org/advocacy\"}, :content (\"Customer Advocacy \")}]}]})"}
+;; <=
+
+;; **
+;;; We now define a template using the **deftemplate** macro, that will include templates and complete the transformation.
+;; **
+
+;; @@
+(html/deftemplate my-template
+  ;acts on html with snip3 format, and takes an argument containing the data that we wish to replace
+  (html/html-snippet snip3) [mydata]
+  ;select the body
+  [:body]
+  ;run the transform where the h1snip snippet function transforms each data item
+  (html/content (map h1snip mydata)))
+
+;; @@
+;; =>
+;;; {"type":"html","content":"<span class='clj-var'>#&#x27;enliven/my-template</span>","value":"#'enliven/my-template"}
+;; <=
+
+;; **
+;;; The template is a function that takes data as an argument and returns a list of HTML strings. On concatenating them, we get the transformed HTML.
+;;; 
+;;; 
+;; **
+
+;; @@
+(view (reduce str (my-template data2)))
+;; @@
+;; =>
+;;; {"type":"list-like","open":"<span class='clj-nil'></span>","close":"<span class='clj-nil'></span>","separator":"\n","items":[{"type":"html","content":"<span class='unk'>&lt;body&gt;</span>","value":"\"<body>\""},{"type":"html","content":"<span class='unk'> &lt;h1 class=&#x27;title&#x27;&gt;Designation&lt;/h1&gt;</span>","value":"\" <h1 class='title'>Designation</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul id=&#x27;grouplevel&#x27;&gt;</span>","value":"\" <ul id='grouplevel'>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/newhire&#x27;&gt;New Hire &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/newhire'>New Hire </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/manager&#x27;&gt;Manager &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/manager'>Manager </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'> &lt;h1 class=&#x27;title&#x27;&gt;Group&lt;/h1&gt;</span>","value":"\" <h1 class='title'>Group</h1>\""},{"type":"html","content":"<span class='unk'> &lt;ul id=&#x27;grouplevel&#x27;&gt;</span>","value":"\" <ul id='grouplevel'>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/IT&#x27;&gt;IT &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/IT'>IT </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'>  &lt;li&gt;</span>","value":"\"  <li>\""},{"type":"html","content":"<span class='unk'>   &lt;a href=&#x27;www.orgname.org/advocacy&#x27;&gt;Customer Advocacy &lt;/a&gt;</span>","value":"\"   <a href='www.orgname.org/advocacy'>Customer Advocacy </a>\""},{"type":"html","content":"<span class='unk'>  &lt;/li&gt;</span>","value":"\"  </li>\""},{"type":"html","content":"<span class='unk'> &lt;/ul&gt;</span>","value":"\" </ul>\""},{"type":"html","content":"<span class='unk'>&lt;/body&gt;</span>","value":"\"</body>\""}],"value":"#html_indent.HtmlIndentView{:contents \"<body><h1 class=\\\"title\\\">Designation</h1><ul id=\\\"grouplevel\\\"><li><a href=\\\"www.orgname.org/newhire\\\">New Hire </a></li><li><a href=\\\"www.orgname.org/manager\\\">Manager </a></li></ul><h1 class=\\\"title\\\">Group</h1><ul id=\\\"grouplevel\\\"><li><a href=\\\"www.orgname.org/IT\\\">IT </a></li><li><a href=\\\"www.orgname.org/advocacy\\\">Customer Advocacy </a></li></ul></body>\", :opts nil}"}
+;; <=
+
+;; **
+;;; ## Summary
+;;; 
+;;; In this post, we've explored the use of the Enlive templating library. 
+;;; 
+;;; We can use an HTML template created by a designer and use Enlive's features to:
+;;; 
+;;; * replace content or attributes which match specific attributes
+;;; * loop over list or tree data structures in Clojure and convert them to equivalent HTML
+;;; * create snippets that convert small sections of HTML, which can then be consumed by a template.
+;;; 
+;;; Enlive allows us to take raw HTML and transform it without having to embed template constructs in the HTML. This allows the HTML designers to change the HTML quickly without requiring them to rewire the underlying "code".
+;;; 
+;;; Enlive is implemented in Clojure, which means that is works on the web app or server. For those wishing to transform HTML on the browser without resorting to Javascript, the [Enfocus](https://github.com/ckirkendall/enfocus/ "Enfocus") library implements the same in ClojureScript.
+;;; 
+;;; 
+;;; That's it for now! Happy hacking!
+;; **
+
+;; @@
+
+;; @@
